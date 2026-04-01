@@ -105,9 +105,9 @@ export class CSGBuilder {
       case 'TX': this.translate(value, 0, 0); break;
       case 'TY': this.translate(0, value, 0); break;
       case 'TZ': this.translate(0, 0, value); break;
-      case 'RX': this.rotateX(value); break;
-      case 'RY': this.rotateY(value); break;
-      case 'RZ': this.rotateZ(value); break;
+      case 'RX': this.rotateX(value * Math.PI / 180); break;
+      case 'RY': this.rotateY(value * Math.PI / 180); break;
+      case 'RZ': this.rotateZ(value * Math.PI / 180); break;
     }
   }
 

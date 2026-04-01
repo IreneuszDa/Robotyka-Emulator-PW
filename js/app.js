@@ -98,11 +98,11 @@ object(shoulder)
 +cylinder(15,60)
 $ Elbow 1 - first arm segment (cone along X via rotation)
 object(elbow1)
-ry(-90°)
+ry(-90)
 +cone(12,10,80)
 $ Elbow 2 - second arm segment
 object(elbow2)
-ry(-90°)
+ry(-90)
 +cone(10,8,70)
 $ Elbow 3 - third arm segment
 object(elbow3)
