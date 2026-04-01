@@ -14,10 +14,11 @@ export class SceneManager {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0a0a18);
 
-    // Camera
+    // Camera — Z-up convention (robotics standard)
     this.camera = new THREE.PerspectiveCamera(50, 1, 1, 50000);
-    this.camera.position.set(600, 400, 800);
-    this.camera.lookAt(0, 150, 0);
+    this.camera.up.set(0, 0, 1); // Z is up
+    this.camera.position.set(600, -800, 400);
+    this.camera.lookAt(0, 0, 150);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({
@@ -31,7 +32,7 @@ export class SceneManager {
     this.controls = new OrbitControls(this.camera, this.canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.target.set(0, 150, 0);
+    this.controls.target.set(0, 0, 150);
     this.controls.update();
 
     // Helpers
@@ -41,7 +42,10 @@ export class SceneManager {
     this._createHelpers();
 
     // Lights (subtle for wireframe visibility)
-    const ambient = new THREE.AmbientLight(0x404060, 0.5);
+    const ambient = new THREE.AmbientLight(0x404060, 0.6);
+    const directional = new THREE.DirectionalLight(0xccddff, 0.3);
+    directional.position.set(500, -600, 800);
+    this.scene.add(directional);
     this.scene.add(ambient);
 
     // Resize handling
@@ -53,8 +57,9 @@ export class SceneManager {
   }
 
   _createHelpers() {
-    // Grid
+    // Grid — lies on XY plane (Z-up convention)
     this.gridHelper = new THREE.GridHelper(2000, 40, 0x1a1a40, 0x111130);
+    this.gridHelper.rotation.x = Math.PI / 2; // rotate from XZ plane to XY plane
     this.scene.add(this.gridHelper);
 
     // Axes
@@ -106,13 +111,23 @@ export class SceneManager {
   // --- Public API ---
 
   clearScene() {
-    for (const [name, group] of this.objects) {
-      this.scene.remove(group);
+    // Remove user objects but keep helpers and lights
+    const toRemove = [];
+    this.scene.traverse((child) => {
+      if (child === this.scene) return;
+      if (child === this.gridHelper) return;
+      if (child === this.axesHelper) return;
+      if (this.axisLabels.includes(child)) return;
+      if (child.isLight) return;
+      // Check if child is a direct child of scene and not a helper
+      if (child.parent === this.scene && !child.isLight) {
+        toRemove.push(child);
+      }
+    });
+    for (const obj of toRemove) {
+      this.scene.remove(obj);
     }
     this.objects.clear();
-    for (const [name, robot] of this.robotGroups) {
-      if (robot.base) this.scene.remove(robot.base);
-    }
     this.robotGroups.clear();
   }
 
@@ -160,25 +175,28 @@ export class SceneManager {
 
   // Camera presets
   resetView() {
-    this.camera.position.set(600, 400, 800);
-    this.controls.target.set(0, 150, 0);
+    this.camera.position.set(600, -800, 400);
+    this.controls.target.set(0, 0, 150);
     this.controls.update();
   }
 
   setViewFront() {
-    this.camera.position.set(0, 200, 1000);
-    this.controls.target.set(0, 200, 0);
+    // Looking along -Y axis (front view in Z-up)
+    this.camera.position.set(0, -1000, 200);
+    this.controls.target.set(0, 0, 200);
     this.controls.update();
   }
 
   setViewSide() {
-    this.camera.position.set(1000, 200, 0);
-    this.controls.target.set(0, 200, 0);
+    // Looking along -X axis (side view in Z-up)
+    this.camera.position.set(1000, 0, 200);
+    this.controls.target.set(0, 0, 200);
     this.controls.update();
   }
 
   setViewTop() {
-    this.camera.position.set(0, 1200, 0.01);
+    // Looking down Z axis (top view in Z-up)
+    this.camera.position.set(0, -0.01, 1200);
     this.controls.target.set(0, 0, 0);
     this.controls.update();
   }

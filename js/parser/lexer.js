@@ -245,24 +245,36 @@ export class Lexer {
       }
 
       // CSG add/subtract: +CUBOID, -CUBOID, etc.
+      // Only at statement level — not inside expressions (after operators, numbers, identifiers, or closing parens)
       if ((ch === '+' || ch === '-') && this.pos + 1 < this.source.length) {
         const nextCh = this.source[this.pos + 1];
         if (/[A-Za-z]/.test(nextCh)) {
-          const saved = this.pos;
-          this.pos++; // skip + or -
-          const word = this._peekWord();
-          const wordUpper = word.toUpperCase();
-          if (CSG_SHAPES.includes(wordUpper)) {
-            this.pos += word.length;
-            const tokenType = ch === '+' ? TokenType.CSG_ADD : TokenType.CSG_SUB;
-            this.tokens.push(new Token(tokenType, wordUpper, this.line));
-            continue;
-          } else {
-            // Could be a user-defined solid: +Nazwa or -Nazwa
-            this.pos += word.length;
-            const tokenType = ch === '+' ? TokenType.CSG_ADD : TokenType.CSG_SUB;
-            this.tokens.push(new Token(tokenType, word, this.line));
-            continue;
+          // Check if previous token makes this an expression operator rather than CSG prefix
+          const prevTok = this.tokens.length > 0 ? this.tokens[this.tokens.length - 1] : null;
+          const isExprContext = prevTok && (
+            prevTok.type === TokenType.NUMBER ||
+            prevTok.type === TokenType.IDENTIFIER ||
+            prevTok.type === TokenType.RPAREN ||
+            prevTok.type === TokenType.DEGREE_SYMBOL
+          );
+
+          if (!isExprContext) {
+            const saved = this.pos;
+            this.pos++; // skip + or -
+            const word = this._peekWord();
+            const wordUpper = word.toUpperCase();
+            if (CSG_SHAPES.includes(wordUpper)) {
+              this.pos += word.length;
+              const tokenType = ch === '+' ? TokenType.CSG_ADD : TokenType.CSG_SUB;
+              this.tokens.push(new Token(tokenType, wordUpper, this.line));
+              continue;
+            } else {
+              // Could be a user-defined solid: +Nazwa or -Nazwa
+              this.pos += word.length;
+              const tokenType = ch === '+' ? TokenType.CSG_ADD : TokenType.CSG_SUB;
+              this.tokens.push(new Token(tokenType, word, this.line));
+              continue;
+            }
           }
         }
       }
