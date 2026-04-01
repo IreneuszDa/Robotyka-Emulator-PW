@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ARLANG Robotics Emulator - Denavit-Hartenberg Robot Modeling Tool">
+  <title>ARLANG Robotics Emulator — DH Notation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- TOP BAR -->
+    <header id="topbar">
+      <div class="topbar-left">
+        <span class="logo-text">ARLANG</span>
+        <span class="logo-sub">Robotics Emulator</span>
+      </div>
+      <div class="topbar-center">
+        <span id="project-name">Nowy Projekt</span>
+      </div>
+      <div class="topbar-right">
+        <span id="status-indicator" class="status-idle">Gotowy</span>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+      
+      <!-- LEFT SIDEBAR -->
+      <aside id="left-sidebar">
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Sterowanie</h3>
+          <button id="btn-simulate" class="btn-primary" title="Uruchom symulacje">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="3,1 13,8 3,15" fill="currentColor"/></svg>
+            Symulacja
+          </button>
+          <button id="btn-stop" class="btn-secondary" title="Zatrzymaj symulacje" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg>
+            Stop
+          </button>
+          <button id="btn-step" class="btn-secondary" title="Krok symulacji" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="3,1 10,8 3,15" fill="currentColor"/><rect x="11" y="1" width="2" height="14" fill="currentColor"/></svg>
+            Krok
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Projekt</h3>
+          <button id="btn-load" class="btn-secondary" title="Zaladuj projekt z plikow">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h5l2 2h5v8H2V3z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            Laduj Projekt
+          </button>
+          <button id="btn-export" class="btn-secondary" title="Eksportuj projekt">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M4 6l4-4 4 4M2 12h12v2H2z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            Eksportuj
+          </button>
+          <button id="btn-new" class="btn-secondary" title="Nowy projekt">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+            Nowy Projekt
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Widok 3D</h3>
+          <button id="btn-reset-view" class="btn-small" title="Resetuj widok kamery">Resetuj widok</button>
+          <button id="btn-view-front" class="btn-small" title="Widok z przodu">Przod</button>
+          <button id="btn-view-side" class="btn-small" title="Widok z boku">Bok</button>
+          <button id="btn-view-top" class="btn-small" title="Widok z gory">Gora</button>
+          <div class="view-options">
+            <label><input type="checkbox" id="chk-grid" checked> Siatka</label>
+            <label><input type="checkbox" id="chk-axes" checked> Osie</label>
+            <label><input type="checkbox" id="chk-labels" checked> Etykiety</label>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-title">Zmienne konfiguracyjne</h3>
+          <div id="joint-sliders">
+            <p class="placeholder-text">Zaladuj robota aby zobaczyc zmienne</p>
+          </div>
+        </div>
+
+        <div class="sidebar-section sidebar-section-log">
+          <h3 class="sidebar-title">Konsola</h3>
+          <div id="console-output"></div>
+        </div>
+      </aside>
+
+      <!-- CENTER: 3D VIEWPORT -->
+      <main id="viewport-container">
+        <canvas id="viewport-canvas"></canvas>
+        <div id="viewport-info">
+          <span id="info-coords">X: 0 Y: 0 Z: 0</span>
+          <span id="info-zoom">Zoom: 100%</span>
+        </div>
+      </main>
+
+      <!-- RIGHT SIDEBAR -->
+      <aside id="right-sidebar">
+        <div class="editor-tabs">
+          <button class="tab-btn active" data-tab="projekt">Projekt</button>
+          <button class="tab-btn" data-tab="robot">Robot</button>
+          <button class="tab-btn" data-tab="otoczenie">Otoczenie</button>
+          <button class="tab-btn" data-tab="program">Program</button>
+        </div>
+
+        <div class="editor-toolbar">
+          <select id="file-selector" title="Wybierz plik do edycji">
+            <option value="">-- Wybierz plik --</option>
+          </select>
+          <button id="btn-add-file" class="btn-icon" title="Dodaj nowy plik">+</button>
+          <button id="btn-delete-file" class="btn-icon" title="Usun plik">x</button>
+          <button id="btn-build" class="btn-build" title="Zbuduj model z kodu (Ctrl+Enter)">
+            Buduj
+          </button>
+        </div>
+
+        <div class="editor-container">
+          <div id="line-numbers"></div>
+          <textarea id="code-editor" spellcheck="false" placeholder="Wpisz kod ARLANG tutaj..."></textarea>
+        </div>
+
+        <div id="editor-status">
+          <span id="editor-line">Ln 1</span>
+          <span id="editor-col">Col 1</span>
+          <span id="editor-file-type">.ROB</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="file-input" multiple accept=".rob,.mod,.lst,.prg,.txt" style="display:none">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

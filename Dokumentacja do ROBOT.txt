@@ -1,0 +1,1800 @@
+﻿ZASADY OPISU OBIEKTÓW WCHODZĄCYCH W SKŁAD SYSTEMU ZROBOTYZOWANEGO
+=================================================================
+
+
+System zrobotyzowany opisany jest w następujących rodzajach plików:
+
+
+*.LST - lista robotów i pozostałych obiektów wraz z określeniem 
+        ich położenia i wzajemnych relacji
+*.ROB - opis geometrii i kinematyki urządzenia (robota) oraz zestaw
+        definicji możliwych instrukcji sterujących dla tego robota
+*.MOD - opis geometrii obiektu nie będącego urządzeniem
+        (np. stanowiska, przedmiotu obrabianego itd.)
+
+
+
+
+Lista robotów i pozostałych obiektów (plik *.LST):
+--------------------------------------------------
+
+
+Pojedynczy obiekt musi być zapisany w jednej linii. Zapis ma
+następującą postać:
+
+
+<Nazwa obiektu> : <Nazwa pliku> [,x [,y[,z[,a[,b[,c]]]]]][/COLOR x][/HIDE]
+
+
+Nazwa obiektu musi być unikalna. Nazwa pliku dotyczy pliku
+z rozszerzeniem *.ROB lub *.MOD, w zależności od tego, czy obiekt
+jest robotem (lub innym urządzeniem składającym się conajmniej
+z jednej pary kinematycznej), czy też nie. Jeśli obiekt jest robotem,
+to nazwa pliku MUSI zawierać rozszerzenie .ROB (w przeciwnym razie
+rozszerzenie można pominąć).
+
+
+x,y,z - oznaczają współrzędne liniowe położenia obiektu w układzie
+        współrzędnych projektu
+
+
+a,b,c - oznaczają kąty Eulera określające położenie kątowe obiektu
+        (kolejno obroty wokół osi X,Y,Z) w stopniach (!)
+
+
+Modyfikatory /COLOR oraz /HIDE umożliwiają definiowanie koloru
+obiektu i jego widoczności (modyfikatory te mogą występować
+w dowolnej kolejności).
+
+
+Plik z rozszerzeniem *.MOD może zawierać albo model geometryczny
+pojedynczego obiektu, albo bazę modeli obiektów, których geometria
+jest opisana w sposób parametryczny (w postaci procedur). Jeśli
+chcemy wykorzystać w naszym projekcie taki model z bazy modeli,
+to jego zapis na liście w pliku *.LST ma taka samą postać, jak
+pokazana powyżej, jednak po nazwie pliku musi się tam znaleźć
+w nawiasach kwadratowych nazwa procedury wraz z parametrami np.:
+
+
+        block_a:baza[BLOCK1(80,40,50)],-400,400,100/color12
+
+
+(w powyższym przykładzie z pliku o nazwie BAZA.MOD zostanie
+załadowany model obiektu opisanego w procedurze BLOCK1, przy
+czym kolejne parametry aktualne tej procedury będą wynosić
+80, 40 i 50).
+
+
+Jeśli dwa obiekty mają być ze sobą połączone, to po ich opisach
+musi się znaleźć instrukcja CONNECT, zapisana w osobnej linii:
+
+
+CONNECT ( <Nazwa obiekt dołączanego> , <Nazwa obiektu bazowego> [:<Nazwa członu>] )
+
+
+Jeśli nazwa członu obiektu bazowego nie jest podana, to dołączenie
+następuje do członu określonego w opisie robota jako GRIPPER.
+
+
+
+
+
+
+
+
+
+
+OPIS GEOMETRII W JĘZYKA ARLANG Z ZASTOSOWANIEM TECHNIKI CSG 
+===========================================================
+
+
+Opis bryły 3-wymiarowej realizowany jest poprzez składanie (dodawanie i odejmowanie)
+brył prostych, z wykorzystaniem koncepcji ruchomego roboczego układu współrzędnych.
+Każda bryła opisywana jest w pewnym układzie współrzędnych odniesienia, który tu
+będziemy nazywać lokalnym układem współrzędnych tej bryły. Bryła ta jest zawsze
+nieruchoma w stosunku do swojego lokalnego układu współrzędnych (innymi słowy, jeśli
+bryła znalazłaby się w ruchu, to jej lokalny układ współrzędnych przemieszczałby się
+wraz z nią).
+W momencie rozpoczęcia opisywania bryły zakłada się, że przestrzeń jest pusta, zaś
+Wspomniany powyżej roboczy układ współrzędnych pokrywa się z lokalnym układem 
+współrzędnych opisywanej bryły. 
+Roboczy układ współrzędnych można przemieszczać do założonych pozycji, definiując 
+odpowiednie sekwencje translacji i rotacji - zaś w tych pozycjach można dodawać
+i odejmować uprzednio zdefiniowane bryły proste. Położenie dodawanych bądź odejmowanych
+brył prostych jest określone w ten sposób, że ich lokalny układ współrzędnych pokrywa
+się z roboczym układem współrzędnych w jego aktualnym położeniu.
+
+
+Wszystkie układy współrzędnych są układami prawoskrętnymi!
+
+
+W języku ARLANG zdefiniowane są następujące bryły podstawowe:
+
+
+
+
+1) Prostopadłościan        - wnętrze prostopadłościanu o podstawie leżącej na płaszczyźnie XY
+                          lokalnego układu współrzędnych, przy czym środek ciężkości tej podstawy
+                          pokrywa się z początkiem tego układu współrzędnych.
+2) Wałek                - wnętrze wałka o zadanym promieniu r i wysokości h, o podstawie leżącej
+                          na płaszczyźnie XY lokalnego układu współrzędnych, przy czym środek
+                          ciężkości tej podstawy pokrywa się z początkiem tego układu współrzędnych.
+3) Stożek                - wnętrze skończonego stożka o promieniu podstawy dolnej r1, promieniu
+                          podstawy górnej r2, oraz o wysokości h, przy czym podstawa dolna leży
+                          w płaszczyźnie XY lokalnego układu współrzędnych, zaś jej środek ciężkości
+                          pokrywa się z początkiem tego układu współrzędnych.
+4) Kula                        - wnętrze kuli o zadanym promieniu i środku pokrywającym się z początkiem
+                          lokalnego układu współrzędnych.
+
+
+W miarę potrzeb można też wykorzystywać następujące bryły elementarne:
+
+
+1) Półprzestrzeń dolna         - jest to nieskończona bryła elementarna, ograniczona "od góry"
+                          płaszczyzną XY jej lokalnego układu współrzędnych. Innymi słowy,
+                          jest to zbiór punktów przestrzeni o współrzędnej z<=0 w lokalnym
+                          układzie współrzędnych
+2) Półprzestrzeń górna         - jest to nieskończona bryła elementarna, ograniczona "od dołu"
+                           płaszczyzną XY jej lokalnego układu współrzędnych. Innymi słowy,
+                          jest to zbiór punktów przestrzeni o współrzędnej z>=0 w lokalnym
+                          układzie współrzędnych
+3) Wnętrze walca        - jest to część przestrzeni zamknięta wewnątrz nieskończonej 
+                          powierzchni walcowej o osi pokrywającej się z osią Z jej lokalnego
+                          układu współrzędnych. Innymi słowy, jest to zbiór punktów
+                          przestrzeni o współrzędnych x i y (mierzonych w lokalnym układzie
+                          współrzędnych tej bryły) spełniających warunek x*x+y*y<=r*r  
+                          gdzie r - promień tej powierzchni walcowej
+4) Zewnętrze walca        - jest to część przestrzeni znajdująca się na zewewnątrz nieskończonej 
+                          powierzchni walcowej o osi pokrywającej się z osią Z jej lokalnego
+                          układu współrzędnych. Innymi słowy, jest to zbiór punktów
+                          przestrzeni o współrzędnych x i y (mierzonych w lokalnym układzie
+                          współrzędnych tej bryły) spełniających warunek x*x+y*y>=r*r  
+                          gdzie r - promień tej powierzchni walcowej
+5) Wnętrze kuli                - jest to część przestrzeni zamknięta wewnątrz powłoki kulistej 
+                          o środku pokrywającym się z punktem początku jej lokalnego
+                          układu współrzędnych. Innymi słowy, jest to zbiór punktów
+                          przestrzeni o współrzędnych x,y,z (mierzonych w lokalnym układzie
+                          współrzędnych tej bryły) spełniających warunek x*x+y*y+z*z<=r*r  
+                          gdzie r - promień tej powłoki kulistej
+6) Zewnętrze kuli        - jest to część przestrzeni znajdująca się na zewnątrz powłoki 
+                          kulistej o środku pokrywającym się z punktem początku jej 
+                          lokalnego układu współrzędnych. Innymi słowy, jest to zbiór 
+                          punktów przestrzeni o współrzędnych x,y,z (mierzonych w lokalnym 
+                          układzie współrzędnych tej bryły)spełniających warunek
+                          x*x+y*y+z*z>=r*r  gdzie r - promień tej powłoki kulistej
+7) Wnętrze stożka        - jest to część przestrzeni zamknięta wewnątrz nieskończonej
+                          powierzchni stożkowej (ciągnącej się w obie strony od wierzchołka)
+                          o osi pokrywającej się z osią Z jej lokalnego układu współrzędnych. 
+                          Innymi słowy, jest to zbiór punktów przestrzeni o współrzędnych x,y,z 
+                          (mierzonych w lokalnym układzie współrzędnych tej bryły) spełniających 
+                          warunek x*x+y*y<=r*r, przy czym r wyraża się wzorem r=z*tg(alfa)
+                          gdzie alfa jest wartością półkąta wierzchołkowego stożka
+8) Zewnętrze stożka        - jest to część przestrzeni znajdująca się na zewnątrz nieskończonej
+                          powierzchni stożkowej (ciągnącej się w obie strony od wierzchołka)
+                          o osi pokrywającej się z osią Z jej lokalnego układu współrzędnych. 
+                          Innymi słowy, jest to zbiór punktów przestrzeni o współrzędnych x,y,z 
+                          (mierzonych w lokalnym układzie współrzędnych tej bryły) spełniających 
+                          warunek x*x+y*y>=r*r, przy czym r wyraża się wzorem r=z*tg(alfa)
+                          gdzie alfa jest wartością półkąta wierzchołkowego stożka
+
+
+Opis geometrii składa się z ciągu wywołań procedur definiujących translacje i rotacje roboczego układu
+współrzędnych oraz wywołań procedur określających dodawane bądź odejmowane w danym miejscu bryły proste.
+
+
+Parametrami procedur definiujących translacje i rotacje są wyrażenia arytmetyczne określające
+wartość tych przemieszczeń (w jednostkach długości np. w milimetrach dla translacji i w radianach
+bądź w stopniach dla rotacji). Kąty dodatnie odpowiadają obrotom w prawo (patrząc w kierunku
+zgodnym z osią), zaś kąty ujemne - obrotom w lewo.
+
+
+Parametrami procedur definiujących dodawane bądź odejmowane bryły są konkretne wartości liczbowe
+bądź wyrażenia arytmetyczne określające wymiary tych brył.
+
+
+Poniżej znajduje się wykaz procedur wraz z ich objaśnieniami:
+
+
+Procedura                Opis                                                        Przykłady
+---------                ----                                                        ---------
+
+
+TX(dx)                  Translacja (przesunięcie) roboczego układu współ-        TX(100)
+                        rzędnych wzdłuż jego własnej osi X o wartość dx
+TY(dy)                  Translacja (przesunięcie) roboczego układu współ-        TY(d*2)
+                        rzędnych wzdłuż jego własnej osi Y o wartość dy
+TZ(dz)                  Translacja (przesunięcie) roboczego układu współ-        TZ(-s/2)
+                        rzędnych wzdłuż jego własnej osi Z o wartość dz
+RX(alfa)                Rotacja (obrót) roboczego układu współrzędnych                RX(-90°)
+                        wokół jego własnej osi X o kąt alfa podany
+                        w radianach (lub w stopniach, jeśli po wartości
+                        liczbowej podamy symbol °, który można wpisać
+                        za pomocą kombinacji klawiszy ALT + 248)
+RY(beta)                Rotacja (obrót) roboczego układu współrzędnych                RY(a)
+                        wokół jego własnej osi Y o kąt beta podany
+                        w radianach (lub w stopniach, jeśli po wartości
+                        liczbowej podamy symbol °, który można wpisać
+                        za pomocą kombinacji klawiszy ALT + 248)
+RZ(gamma)               Rotacja (obrót) roboczego układu współrzędnych                RZ(45°)
+                        wokół jego własnej osi Z o kąt gamma podany
+                        w radianach (lub w stopniach, jeśli po wartości
+                        liczbowej podamy symbol °, który można wpisać
+                        za pomocą kombinacji klawiszy ALT + 248)
+STPOS(nr)                  Zapamiętanie aktualnego położenia roboczego układu        STPOS(3)
+                        współrzędnych (STore Position) i przypisanie mu
+                        numeru nr. 
+                        Zapamiętać można conajwyżej 255 położeń o numerach
+                        od 1 do 255. Powtórne wywołanie procedury STPOS 
+                        z takim samym parametrem spowoduje skasowanie
+                        uprzednio zapamiętanego położenia
+REPOS(nr)                  Odtworzenie zapamiętanego uprzednio pod numerem nr        REPOS(3)
+                        połozenia (REstore POsition) roboczego układu
+                        współrzędnych
+
+
+Podstawowe bryły złożone:
+
+
++CUBOID(dx,dy,dz)        Dodanie wnętrza prostopadlościanu o wymiarach                +CUBOID(a,b,c)
+                        dx, dy, dz odpowiednio w kierunku osi X, Y, Z
+-CUBOID(dx,dy,dz)        Odjęcie wnętrza prostopadlościanu o wymiarach                -CUBOID(a,b,c)
+                        dx, dy, dz odpowiednio w kierunku osi X, Y, Z
++CYLINDER(r,h)                Dodanie wnętrza wałka cylindrycznego o promieniu r        +CYLINDER(10,100)
+                        i wysokości h
+-CYLINDER(r,h)                Odjęcie wnętrza wałka cylindrycznego o promieniu r        -CYLINDER(10,100)
+                        i wysokości h
++CONE(r1,r2,h)                Dodanie wnętrza stożka o promieniu podstawy dolnej        +CONE(20,10,80)
+                        r1, promieniu podstawy górnej r2 oraz wysokości
+                        stożka h
+-CONE(r1,r2,h)                Odjęcie wnętrza stożka o promieniu podstawy dolnej        -CONE(20,10,80)
+                        r1, promieniu podstawy górnej r2 oraz wysokości
+                        stożka
++SPHERE(r)                Dodanie wnętrza kuli o promieniu r (procedura ta        +SPHERE(100)
+                        jest równoważna z procedurą +WK(r)
+-SPHERE(r)                Odjęcie wnętrza kuli o promieniu r (procedura ta        +SPHERE(100)
+                        jest równoważna z procedurą -WK(r)
+
+
+Bryły elementarne:
+
+
++LHSP                        Dodanie półprzestrzeni dolnej (Lower Half-SPace)        +LHSP
+                        w aktualnym położeniu roboczego układu współrzędnych
++UHSP                        Dodanie półprzestrzeni górnej (Upper Half-SPace)        +UHSP
+                        w aktualnym położeniu roboczego układu współrzędnych
+-LHSP                        Odjęcie półprzestrzeni dolnej (Lower Half-SPace)        -LHSP
+                        w aktualnym położeniu roboczego układu współrzędnych
+-UHSP                        Odjęcie półprzestrzeni górnej (Upper Half-SPace)        -UHSP
+                        w aktualnym położeniu roboczego układu współrzędnych
++ICYL(r)                Dodanie wnętrza nieskończonego walca (Inside of           +icyl(10)
+                        CYLinder) o podanym promieniu r, w aktualnym poło-
+                        żeniu roboczego układu współrzędnych
+-ICYL(r)                Odjęcie wnętrza nieskończonego walca (Inside of           -icyl(r/2)
+                        CYLinder) o podanym promieniu r, w aktualnym poło-
+                        żeniu roboczego układu współrzędnych
++OCYL(r)                Dodanie zewnętrza nieskończonego walca (Outside of      +ocyl(10)
+                        CYLinder) o podanym promieniu r, w aktualnym poło-
+                        żeniu roboczego układu współrzędnych
+-OCYL(r)                Odjęcie zewnętrza nieskończonego walca (Outside of      -ocyl(5)
+                        CYLinder) o podanym promieniu r, w aktualnym poło-
+                        żeniu roboczego układu współrzędnych
++ISPH(r)                Dodanie wnętrza kuli (Inside of SPHere) o podanym              +isph(50)
+                        promieniu r, w aktualnym położeniu roboczego układu
+                        współrzędnych     
+-ISPH(r)                Odjęcie wnętrza kuli (Inside of SPHere) o podanym              -isph(D/2)
+                        promieniu r, w aktualnym położeniu roboczego układu
+                        współrzędnych     
++OSPH(r)                Dodanie zewnętrza kuli (Outside of SPHere) o poda-        +osph(50)
+                        nym promieniu r, w aktualnym położeniu roboczego
+                        układu współrzędnych     
+-OSPH(r)                Odjęcie zewnętrza kuli (Outside of SPHere) o poda-             -osph(D/2)
+                        nym promieniu r, w aktualnym położeniu roboczego
+                        układu współrzędnych
++ICON(alfa)                Dodanie wnętrza nieskończonego stożka (Inside of         +icon(30°)
+                        CONe) o podanej wartości półkąta wierzchołkowego
+                        alfa, w aktualnym położeniu roboczego układu współ-
+                        rzędnych.
+                        Kąt alfa jest podawany w radianach (lub w stop-
+                        niach, gdy po wartości liczbowej podamy symbol °,
+                        który można wpisać za pomocą kombinacji klawiszy
+                        ALT + 248)
+-ICON(alfa)                Odjęcie wnętrza nieskończonego stożka (Inside of         -icon(a/2)
+                        CONe) o podanej wartości półkąta wierzchołkowego
+                        alfa, w aktualnym położeniu roboczego układu współ-
+                        rzędnych.
+                        Kąt alfa jest podawany w radianach (lub w stop-
+                        niach, gdy po wartości liczbowej podamy symbol °,
+                        który można wpisać za pomocą kombinacji klawiszy
+                        ALT + 248)
++OCON(alfa)                Dodanie zewnętrza nieskończonego stożka (Outside of         +ocon(45°)
+                        CONe) o podanej wartości półkąta wierzchołkowego
+                        alfa, w aktualnym położeniu roboczego układu współ-
+                        rzędnych.
+                        Kąt alfa jest podawany w radianach (lub w stop-
+                        niach, gdy po wartości liczbowej podamy symbol °,
+                        który można wpisać za pomocą kombinacji klawiszy
+                        ALT + 248)
+-OCON(alfa)                Odjęcie zewnętrza nieskończonego stożka (Outside of         -ocon(arctan(0.8))
+                        CONe) o podanej wartości półkąta wierzchołkowego
+                        alfa, w aktualnym położeniu roboczego układu współ-
+                        rzędnych.
+                        Kąt alfa jest podawany w radianach (lub w stop-
+                        niach, gdy po wartości liczbowej podamy symbol °,
+                        który można wpisać za pomocą kombinacji klawiszy
+                        ALT + 248)
+
+
+Oprócz wykorzystywania powyższych procedur opisujących dodawane bądź odejmowane bryły elementarne
+i podstawowe bryły złożone, istnieje również możliwość dodawania i odejmowania zdefiniowanych
+uprzednio własnych brył złożonych, opisanych w osobnych procedurach niebibliotecznych
+(czyli własnych procedurach napisanych przez użytkownika).
+W takim przypadku taka bryła składowa jest dodawana bądź odejmowania w takim położeniu, że jej
+lokalny układ współrzędnych pokrywa się z roboczym układem współrzędnych w jego aktualnym położeniu.
+
+
+Zapis formalny dodania lub odjęcia takiej bryły ma następującą postać:
+
+
++ Nazwa_procedury                                np.:         +Nakretka
+- Nazwa_procedury                                np.:        -Rowek teowy
+
+
+bądź też:
+
+
++ Nazwa_procedury (zestaw parametrów)                np.:        +szescian(30)
+- Nazwa_procedury (zestaw parametrów)                np.:        -waleczek(D,L)
+
+
+gdzie "Nazwa_procedury" jest nazwą procedury niebibliotecznej, w której dodawana bądź odejmowana
+bryła składowa została opisana. Opis bryły składowej zawarty we wspomnianej procedurze 
+niebibliotecznej jest również ciągiem wywołań procedur określających translacje roboczego układu
+współrzędnych (przy czym jest to zupełnie niezależny roboczy układ współrzędnych, niemający nic
+wspólnego z roboczym układem współrzędnych używanym w opisie zawierającym wywołanie tej procedury
+niebibliotecznej) oraz wywołań procedur definiujących dodawane bądź odejmowane bryły proste (choć
+i tam mogą się znaleźć odwołania do brył składowych niższego stopnia, opisanych w jeszcze innych
+procedurach niebibliotecznych).
+
+
+Poniżej przedstawiono przykładowy opis wałka stopniowanego mającego następujące trzy stopnie:
+- pierwszy o średnicy 30 i długości 50
+- drugi o średnicy 60 i długości 80
+- trzeci o średnicy 30 i długości 40
+
+
+
+
++cylinder(15,170)
+tz(50)
++cylinder(30,80)
+
+
+
+
+Taki sam wałek można też opisać, wykorzystując własną procedurę "stopien":
+
+
+
+
+procedure stopien
+parameters D,L
++icyl(D/2)
+-lspc
+tz(L)
+-uspc
+endproc
+
+
+Kod wykorzystujący tę procedurę ma następującą postać:
+
+
+
+
++stopien(30,170)
+tz(50)
++stopien(60,80)
+
+
+
+
+
+
+OPIS PODSTAW JĘZYKA ARLANG
+==========================
+
+
+ZASADY OGÓLNE:
+
+
+  - Zasadniczo w jednej linii może być zapisana dokładnie jedna instrukcja.
+    Jeśli jednak w jednej linii chcemy zapisać kilka instrukcji, to musimy
+    je oddzielić od siebie średnikami np:
+
+
+              REPEAT; A:=A+1; UNTIL A>20
+
+
+  - Jeśli w linii wystąpi znak '$', to cała treść tej linii następująca
+    po tym znaku jest interpretowana jako komentarz
+
+
+  - Nazwy zmiennych, procedur i funkcji nie mogą być dłuższe, niż 80 znaków.
+    W przypadku zmiennych indeksowanych do dlugości tej wlicza się także 
+    nawias otwierający
+
+
+  - Wszystkie spacje i znaki tabulatora są ignorowane
+
+
+
+
+ZMIENNE:
+
+
+  - Wszystkie zmienne są typu rzeczywistego („floating point”).
+
+
+  - Rozróżniamy zmienne proste i zmienne indeksowane (tablice).
+
+
+  - Zmienne proste pisane małymi i dużymi literami są rozróżniane
+
+
+  - Zmienne indeksowane pisane małymi i dużymi literami nie są rozróżniane
+
+
+  - Zmienna prosta jest automatycznie definiowana przy pierwszym podstawieniu
+    pod nią jakiejkolwiek wartości np. A:=b+5*(b-3)
+
+
+  - Tablica może być zadeklarowana w dowolnym miejscu programu, ale tylko 
+    przed pierwszym odwołaniem do niej. Tablice mogą być tylko jednowymiarowe. 
+    Ich elementy numerowane są od 1 do rozmiaru tablicy. Maksymalny rozmiar 
+    tablicy może być 10000. Maksymalna ilość zadeklarowanych w danym programie 
+    tablic wynosi 250. Nie można powtórnie deklarować tablicy o danej nazwie 
+    w celu zmiany jej rozmiaru. Deklaracja tablicy ma postać:
+
+
+                       ARRAY nazwa(rozmiar)
+Przykłady:
+                       ARRAY TABELA(3)
+                       ARRAY B(a+5)
+
+
+Odwołanie do zmiennej indeksowanej ma postać:
+
+
+                       nazwa(indeks)
+Przykłady:
+                       TABELA(j):=13
+                       a:=B(13)
+
+
+
+
+WYRAZENIA ARYTMETYCZNE:
+
+
+  - W skład wyrażeń arytmetycznych mogą wchodzić operatory +,-,/,* 
+    oraz następujące funkcje:
+     ABS( )         - wartość bezwzględna
+     SIN( )      - funkcja sinus kąta podanego w radianach
+     COS( )      - funkcja cosinus kąta podanego w radianach
+     ARCTAN( )   - funkcja arcus tangens (wynik w radianach)
+     ARCTAN2( )  - dwuargumentowa funkcja arcus tangens, zwracająca wartość kąta 
+                   zawartego pomiędzy osią X a półprosta wychodzącą z początku 
+                   układu współrzędnych i przechodzącą przez punkt o współrzędnych 
+                   (X1,Y1) którego współrzędna Y1 jest pierwszym parametrem funkcji 
+                   ARCTAN2, zaś współrzędna X1 jest drugim parametrem funkcji ARCTAN2
+                   (wynik w radianach)
+     SQRT( )     - pierwiastek kwadratowy
+     PI()         - funkcja zwracająca wartość liczby PI
+     EXISTS( )         - funkcja zwracająca wartość 1, gdy istnieje zmienna prosta o nazwie 
+                   będącej parametrem tej funkcji, zaś zwracająca wartość 0, gdy
+                   zmienna taka nie istnieje
+     Funkcje trygonometryczne operują na radianach. Duże i małe litery nie są 
+     rozróżniane w nazwach funkcji
+
+
+  - Zachowywane jest pierwszeństwo dzielenia i mnożenia przed dodawaniem 
+    i odejmowaniem, chyba że kolejność działań zmieniona jest przez zastosowanie 
+    nawiasów.
+
+
+  - Oprócz funkcji standardowych w wyrażeniach arytmetycznych mogą też wystąpić 
+    funkcje zdefiniowane w bibliotekach specjalistycznych np. związanych 
+    z generowaniem i realizacją instrukcji sterujących dla robota.
+
+
+  - Stopień złożoności wyrażeń arytmetycznych jest nieograniczony
+
+
+
+
+INSTRUKCJE PODSTAWIENIA:
+
+
+  -  Ich postać ogólna jest następująca:  
+
+
+                Zmienna := Wyrażenie_arytmetyczne
+
+
+     Przykłady:
+                    DELTA:=B*B-4*A*C
+                    X1:=(-B-SQRT(DELTA))2/A
+                    X2:=(-B+SQRT(DELTA))2/A
+
+
+
+
+PROCEDURY NIEBIBLIOTECZNE:
+
+
+  - Pod pojęciem procedur niebibliotecznych rozumiemy tutaj procedury definiowane 
+    przez użytkownika w programie
+
+
+  - Definicje procedur niebibliotecznych mogą występować w dowolnej kolejności, 
+    jednak zawsze przed programem głównym (patrz „struktura programu”)
+
+
+  - Treść pojedynczej procedury niebibliotecznej zawarta jest miedzy instrukcjami:
+
+
+                  PROCEDURE <nazwa>  
+                  .....
+                  .....
+                  ENDPROC
+    Przykład:
+                  PROCEDURE OBLICZ_C
+                  C:=A*2
+                  ENDPROC
+
+
+  - Wywoływanie procedur niebibliotecznych odbywa się za pomocą instrukcji:
+
+
+                   CALL <nazwa>
+Przykład:
+                  CALL OBLICZ_C
+
+
+  - Duże i małe litery nie są rozróżniane w nazwach procedur
+
+
+  - Opcjonalnie może wystąpić w instrukcji CALL lista parametrów aktualnych 
+    przekazywanych do procedury. Lista ta zamieszczana jest w nawiasach zwykłych 
+    i składa się z szeregu wyrażeń arytmetycznych oddzielonych przecinkami np.:
+
+
+                         CALL OBLICZENIE(a,b,c*4)
+
+
+  - Podstawienie wartości parametrów aktualnych pod odpowiednie zmienne wykorzystywane 
+    przez procedurę odbywa się w tej procedurze przez wywołanie instrukcji PARAMETERS 
+    o postaci:
+
+
+                         PARAMETERS nazwa1,nazwa2,nazwa3....
+
+
+    gdzie nazwa1, nazwa2, nazwa3.... - nazwy zmiennych prostych, pod które mają być 
+    podstawione wartości parametrów aktualnych podane w instrukcji CALL np.:
+
+
+                         PARAMETERS x,y,z
+
+
+    Instrukcja PARAMETERS powinna być w zasadzie wywołana zaraz po nagłówku procedury.
+
+
+  - W instrukcji CALL dopuszczalne jest zastąpienie fragmentu nazwy wywoływanej procedury
+    przez wyrażenie arytmetyczne, którego wynik odpowiada łańcuchowi tekstowemu będącemu 
+    w.w. fragmentem nazwy. W takim przypadku wspomniane wyrażenie arytmetyczne należy 
+    zapisać w nawiasach klamrowych.
+    Przykładowo, jeśli zmienna "a" ma wartość 3, to zapis:
+                        CALL PROC{a*5}{a}
+    jest równoważny zapisowi:
+                        CALL PROC153
+
+
+STRUKTURA PROGRAMU:
+
+
+  - Główny blok programu zaczyna się od instrukcji PROGRAM, a kończy wraz z końcem 
+    pliku tekstowego, w którym jest zawarty ten program. 
+    Wszystkie definicje procedur niebibliotecznych (wywoływanych w bloku głównym 
+    lub nawzajem przez siebie) musza się znajdować przed instrukcją PROGRAM
+
+
+  - Linie programu nie dające się prawidłowo zinterpretować są ignorowane przez 
+    interpreter, przy czym po zakończeniu programu wyświetlone będą stosowne komunikaty 
+    o wystąpieniu błędów.
+
+
+
+
+INSTRUKCJE WARUNKOWE:
+
+
+- Instrukcje realizowane warunkowo znajdują się miedzy instrukcjami:
+
+
+                    IF <warunek>
+                         ....
+                         ....
+                         ELSE
+                         ....
+                    ....
+                    ENDIF
+   Przykład:
+
+
+                   if a>b
+                       c:=5;a:=c+1
+                         else
+                           c:=-5
+                  endif
+
+
+  - Człon "else" ma charakter opcjonalny np.prawidłowa jest innstrukcja warunkowa:
+                  if c=0
+                   d:=9
+                  endif
+                   
+  - Maksymalne zagnieżdżenie instrukcji warunkowych wynosi 250 poziomów.
+
+
+
+
+PĘTLE "REPEAT":
+
+
+  - Instrukcje realizowane wielokrotnie (w pętli) znajdują się miedzy instrukcjami:
+
+
+                  REPEAT
+                  ....
+                  UNTIL <warunek wyjścia z pętli>
+    Przykład:
+                  k:=0
+                  repeat
+                   k:=k+1
+                  until k>20
+
+
+  - Maksymalny stopień zagnieżdżenia pętli REPEAT ... UNTIL wynosi 250 poziomów.
+
+
+
+
+WARUNKI LOGICZNE:
+
+
+  - Warunki logiczne wykorzystywane są w instrukcjach warunkowych (if… else… endif) 
+    oraz w pętlach (repeat… until…)
+
+
+  - Warunki logiczne dzielimy na proste i złożone
+
+
+  - Rozróżniamy warunki logiczne proste następujących typów:
+
+
+                         WYRAŻENIE1  >  WYRAŻENIE2
+                         WYRAŻENIE1  <  WYRAŻENIE2   
+                  WYRAŻENIE1  =  WYRAŻENIE2
+                  WYRAŻENIE1  <> WYRAŻENIE2
+
+
+    gdzie WYRAŻENIE1 i WYRAŻENIE2 są dowolnymi wyrażeniami arytmetycznymi. 
+    O spełnieniu bądź niespełnieniu ostatnich 2 warunków decyduje różnica 
+    pomiędzy wartościami WYRAŻENIE1 i WYRAŻENIE2 wynosząca do 0.001. 
+    Na przykład:
+
+
+                  Jeśli A=5 i B=5.000001, to warunek A=B jest spełniony
+                  Jeśli A=5 i B=5.01, to warunek A=B nie jest spełniony
+
+
+    Dopuszczalne jest także, aby warunek logiczny był po prostu wyrażeniem arytmetycznym. 
+    W tym przypadku warunek uważany jest za spełniony, gdy wartość tego wyrażenia jest 
+    większa od 0.001, zaś w przypadku przeciwnym warunek jest uważany za niespełniony.
+    Przyklad:
+                        A:=0
+                        IF A
+                          B:=1
+                        ELSE
+                          B:=2
+                        ENDIF
+
+
+    (w powyższym przykładzie zmienna B przyjmuje wartość 2 )
+
+
+  - Warunki logiczne złożone są warunkami złożonymi z kilku warunków prostych, 
+    związanych ze sobą operatorami koniunkcji .&. na przykład:
+
+
+         IF a>b+5 .&. a<c-6
+
+
+
+
+PROCEDURY BIBLIOTECZNE:
+
+
+  - Procedury biblioteczne są to procedury zawarte w SYSTEMOWEJ BIBLIOTECE języka 
+    ARLANG oraz w BIBLIOTEKACH SPECJALISTYCZNYCH (na przykład omówione dalej procedury
+    służące do generowania i realizowania instrukcji sterujących dla robota)
+
+
+  - Procedury biblioteczne wywoływane są przez nazwę np. wywołanie procedury o nazwie 
+    DETACHVIEW ma postać:
+
+
+                       DETACHVIEW
+
+
+  - Duże i małe litery nie są rozróżniane w nazwach procedur
+
+
+  - Procedury biblioteczne mogą nie mieć żadnego parametru, ale mogą też mieć jeden 
+    lub więcej parametrów aktualnych. Jeśli parametry występują, to w wywołaniu 
+    procedury znajdują się one w nawiasach okrągłych i następują zaraz po nazwie 
+    procedury) np.:
+
+
+                       ACTION (cart, forwards, 100)
+
+
+  - Najczęściej używaną procedurą systemową jest procedura WRITELN. Procedura ta
+    wykorzystywana jest najczęściej przy testowaniu programu i umożliwia zapis
+    danych do pliku debuggera (patrz niżej). Ma ona zmienną (elastyczną) liczbę
+    parametrów. Jej postać jest następująca:
+
+
+                  WRITELN(DBG,<lista parametrów oddzielona przecinkami>)
+
+
+    Każdy z parametrów może być albo łańcuchem znaków i wtedy musi wystąpić w pojedynczych
+    apostrofach np.:
+
+
+                  WRITELN(DBG,'Koniec_programu')
+
+
+    (przy czym spacje w tym łańcuchu należy zastąpić znakami _), albo też może być
+    wyrażeniem arytmetycznym.
+    W tym drugim przypadku, jeśli chcemy sformatować postać zapisywanej liczby, można
+    zastosować notację analogiczną do stosowanej w języku PASCAL:
+
+
+         <wyrażenie_arytmetyczne>:<wyrażenie_arytmetyczne>
+    lub  <wyrażenie_arytmetyczne>:<wyrażenie_arytmetyczne>:<wyrażenie_arytmetyczne>
+
+
+    Pierwsze wyrażenie arytmetyczne, to zapisywana wartość, drugie - liczba pozycji,
+    na których ma być zapisana ta wartość, a trzecie - liczba miejsc po kropce
+    dziesiętnej (jeśli nie podana, to przyjmowana standardowo 0)
+
+
+    Przykład:           WRITELN(DBG,'Wartosc_wyrazenia_delta:_',b*b-4*a*c:6:3)
+
+
+
+
+
+
+
+
+ZASADY OPISU URZĄDZEŃ
+=====================
+
+
+Opis urządzenia (manipulatora) musi być zawarty w pliku o nazwie z rozszerzeniem .ROB
+Zawiera on następujące elementy:
+
+
+- Opis geometrii członów manipulatora w procedurze GEOMETRY
+- Opis kinematyki w procedurze KINEMATICS
+- Definicje instrukcji sterujących dla manipulatora
+
+
+
+
+Opis geometrii członów:
+-----------------------
+
+
+Procedura GEOMETRY zawiera opis CSG poszczególnych członów urządzenia (robota).
+Opis każdego członu (za wyjątkiem pierwszego, który automatycznie przyjmuje nazwę
+BASE) zaczyna się od instrukcji OBJECT:
+
+
+                OBJECT ( <Nazwa członu> [:GRIPPER] )
+
+
+           np.:        OBJECT (PLATFORM)
+                OBJECT (HAND: GRIPPER)
+
+
+Nazwa członu nie może być dłuższa niż 80 znaków. 
+Jeśli człon jest określony jako GRIPPER, to do niego automatycznie dołączane są
+obiekty w wyniku realizacji instrukcji CONNECT (wykorzystywanej w opisie ogólnym
+systemu zrobotyzowanego w pliku *.LST), a także w wyniku realizacji stosowanych
+w programie sterującym robotem procedur CONNECT, CONNECT ORIGIN, ATTACH TO oraz
+ATTACH ORIGIN TO (jeśli w procedurach tych nie jest podana wprost nazwa członu).
+Bezpośrednio po instrukcji OBJECT musi się znaleźć opis geometrii danego członu
+w postaci ciągu wywołań procedur realizujących dodawanie i odejmowanie brył
+prostych metodą CSG np:
+
+
+                OBJECT (PLATFORM)
+                tz (50)
+                +CUBOID (100,100,40)
+
+
+Lokalny układ współrzędnych, w którym się opisuje bryłę danego członu robota, jest
+tożsamy z układem współrzędnych tego członu użytym do określenia parametrów Denavita-
+-Hartenberga (w procedurze KINEMATICS - patrz dalej).
+Opis geometryczny zawarty PRZED pierwszym wystąpieniem instrukcji OBJECT odnosi
+się do członu BASE.
+
+
+
+
+Opis kinematyki manipulatora:
+-----------------------------
+
+
+Procedura KINEMATICS zawiera opis powiązań pomiędzy członami robota (opis par
+kinematycznych) oraz opis położenia względnego tych członów.
+Powiązanie członu z członem bezpośrednio go poprzedzającym w łańcuchu kinematycznym
+opisywane jest za pomocą instrukcji NEXT JOINT, mającej postać:
+
+
+        NEXT JOINT (<Nazwa członu dołączanego>)
+lub
+        NEXT JOINT (<Nazwa członu dołączanego> ,<Nazwa członu odniesienia>[,t_start])
+lub
+        NEXT JOINT (<Nazwa członu dołączanego>,<Nazwa członu odniesienia>[,<t_1>,<t_2>[,<t_start>]])
+
+
+Jeśli człon odniesienia nie jest podany, to automatycznie przyjmuje się, że chodzi
+o BASE. Jako parametry procedury NEXT JOINT występować mogą tylko te nazwy członów,
+które były użyte w procedurze GEOMETRY. Mogą one być zapisywane zarówno małymi jak
+i dużymi literami.
+
+
+Po instrukcji NEXT JOINT następuje zapis parametrów Denavita-Hartenberga opisujących
+położenie układu współrzednych członu dołączanego w stosunku do układu współrzędnych
+członu odniesienia:
+
+
+        DH NOTATION (a, alfa, d, theta)
+
+
+przy czym parametry tej procedury są właśnie parametrami Denavita-Hartenberga:
+        
+        a         - długość członu odniesienia (w jednostkach długości)
+        alfa        - kąt skręcenia członu odniesienia w radianach (lub w stopniach, jeśli po wartości
+                  liczbowej poda się symbol °, który można uzyskać za pomocą kombinacji klawiszy
+                  ALT + 248)
+        d        - odsunięcie członu dołączanego (w jednostkach długości)
+        theta        - kąt konfiguracji członu dołączanego w radianach (lub w stopniach, jeśli po wartości
+                  liczbowej poda się symbol °, który można uzyskać za pomocą kombinacji klawiszy
+                  ALT + 248)
+
+
+Wartości parametrów procedury DH NOTATION mogą być wyrażeniami arytmetycznymi.
+Jeśli dołączany człon ma być ruchomy względem członu odniesienia, to odpowiednim
+parametrem procedury (odpowiadającym zmiennej konfiguracyjnej) musi być nie konkretna
+wartość, lecz specjalna funkcja t().
+
+
+Ograniczenia przemieszczania opisywanego członu mogą być określone poprzez podanie
+minimalnej i maksymalnej wartości parametru konfiguracyjnego (parametry t_1 i t_2 
+instrukcji NEXT JOINT).
+Parametr t_start oznacza startową (początkową) wartość parametru konfiguracyjnego Denavita-
+-Hartenberga (tzn. odpowiadającą startowemu położeniu członu robota). Jeśli parametr 
+t_start nie jest podany, to jest on automatycznie przyjmowany jako równy wartości t_1,
+jeśli zaś t_1 nie jest podane, to t_start przyjmuje automatycznie wartość 0.
+
+
+Jeśli procedura DH NOTATION zostanie pominięta, oznacza to pokrywanie się układów
+współrzędnych członu dołączanego i członu odniesienia (i - oczywoście - brak możliwości
+ich wzajemnego przemieszczania się).
+
+
+Zamiast zapisu parametrów Denavita-Hartenberga (albo dodatkowo do niego) można też
+zapisać ciąg transformacji (translacji i rotacji), określających przejście układu
+współrzędnych członu odniesienia do położenia układu współrzędnych członu dołączanego:
+
+
+        TX (l) - translacja wzdłuż osi X o wartość l (w jednostkach długości)
+        TY (l) - translacja wzdłuż osi Y o wartość l (w jednostkach długości)
+        TZ (l) - translacja wzdłuż osi Z o wartość l (w jednostkach długości)
+        RX (a) - rotacja wokół osi X o wartość a w radianach (lub w stopniach,
+                 jeśli po wartości liczbowej poda się symbol °, który można uzyskać
+                 za pomocą kombinacji klawiszy ALT + 248)
+        RY (a) - rotacja wokół osi Y o wartość a w radianach (lub w stopniach,
+                 jeśli po wartości liczbowej poda się symbol °, który można uzyskać
+                 za pomocą kombinacji klawiszy ALT + 248)
+        RZ (a) - rotacja wokół osi Z o wartość a w radianach (lub w stopniach,
+                 jeśli po wartości liczbowej poda się symbol °, który można uzyskać
+                 za pomocą kombinacji klawiszy ALT + 248)
+
+
+Przykład opisu powiązania członu ARM2 z poprzedzającym go w łańcuchu kinematycznym
+członem ARM1 za pomocą przegubu obrotowego o zakresie kątów obrotu od -150° do 150°:
+
+
+next joint(arm2,arm1,-150°,150°,0)
+dh notation( 50,90°,0,t() )
+ 
+
+
+Przykład prostego opisu geometrii i kinematyki pewnego manipulatora:
+--------------------------------------------------------------------
+
+
+$*********************
+procedure geometry
++cuboid(60,60,340)            $ Opis członu BASE
+
+
+object(arm_z)                $ Człon ARM_Z nie ma zdefiniwanej geometrii
+
+
+object(arm_x)                $ Opis członu ARM_X
+tz(-620)
++cuboid(40,40,640)
+
+
+object(hand)                $ Opis członu HAND
+tz(-70)
++cylinder(20,40)
+
+
+object(jaw1)                $ Opis szczęki JAW1
+ty(-10)
++cuboid(20,40,5)
+
+
+object(jaw2)                $ Opis szczęki JAW2
+ty(10)
++cuboid(20,40,5)
+endproc
+$*********************
+procedure kinematics
+next joint(arm_z,base,100,320,180)        
+dh notation(0,0,t(),90°)                $ Przegub translacyjny - ruch pionowy
+next joint(arm_x,arm_z,50,590,170)
+dh notation(50,90°,t(),0)                $ Przegub translacyjny - ruch poziomy
+next joint(hand,arm_x)
+dh notation(0,90°,90,t())                $ Przegub obrotowy
+next joint(jaw1,hand,12.5)
+dh notation(0,90°,t(),0)                $ Liniowy ruch szczęki 1
+next joint(jaw2,hand,12.5)
+dh notation(0,-90°,t(),0)                $ Liniowy ruch szczęki 2
+endproc
+$*********************
+
+
+
+
+Definicje instrukcji sterujących:
+---------------------------------
+
+
+Instrukcje sterujące definiuje się za pomocą procedur opisujących sposób realizacji
+podstawowych czynności możliwych do wykonania przez modelowany manipulator
+(np. ruch członów manipulatora do zadanych współrzędnych konfiguracyjnych, ruch
+efektora do punktu o zadanych współrzędnych, otwarcie i zamknięcie chwytaka,
+parkowanie robota itp).
+Procedury te mogą mieć dowolną (unikalną dla danego manipulatora) nazwę. Nazwa ta
+powinna wyraźnie się kojarzyć z realizowaną czynnością, gdyż będzie później
+wykorzystywana w ramach instrukcji ACTION w programach sterujących modelowanym
+gniazdem zrobotyzowanym (patrz opis struktury programów sterujących).
+
+
+Jądrem każdej procedury opisującej podstawową czynność realizowaną przez manipulator
+jest pętla REPEAT ... UNTIL DONE(), zawierająca szereg wywołań procedury MOVE:
+
+
+    REPEAT
+      MOVE( <Nazwa członu A> , <przyrost zmiennej konfiguracyjnej członu A w funkcji czasu> )
+      MOVE( <Nazwa członu B> , <przyrost zmiennej konfiguracyjnej członu B w funkcji czasu> )
+      ...
+      MOVE( <Nazwa członu X> , <przyrost zmiennej konfiguracyjnej członu X w funkcji czasu> )
+    UNTIL DONE ()
+
+
+Każdy człon manipulatora biorący udział w realizacji danej czynności musi być
+uwzględniony w osobnej instrukcji MOVE. Nazwy członów mogą być zapisane zarówno
+małymi jak  i dużymi literami. 
+
+
+Przyrosty zmiennych konfiguracyjnych poszczególnych członów podaje się w funkcji
+czasu znormalizowanego do zakresu [0,1]. Bieżąca wartość tego czasu jest zwracana
+przez funkcję L(). W momencie rozpoczęcia czynności funkcja ta zwraca więc wartość 0,
+zaś w momencie zakończenia czynności - wartość 1. 
+
+
+Podawany w instrukcji MOVE przyrost wartości zmiennej konfiguracyjnej danego członu
+jest rozumiany jako różnica pomiędzy bieżącą wartością tej zmiennej,odpowiadającą
+bieżącej wartości funkcji L(), a wartością początkową, czyli odpowiadającą wartości
+funkcji L() równej zeru.
+
+
+W wyrażeniach arytmetycznych określających przyrost wartości zmiennej konfiguracyjnej
+danego członu manipulatora, można się odwoływać do początkowych wartości zmiennych
+konfiguracyjnych dowolnych członów tego robota. Te wartości początkowe są zwracane
+przez funkcję:
+
+
+          TSTART (<Nazwa członu>)
+
+
+Innymi słowy, funkcja TSTART zwraca dla członu o podanej nazwie wartość jej zmiennej
+konfiguracyjnej odpowiadającą wartości funkcji L() równej zeru.
+
+
+UWAGA! W niektórych sytuacjach (w szczególności w przypadku realizacji interpolacji
+przez manipulator) zachodzi potrzeba ustalenia konkretnej wartości prędkości punktu
+TCP wzdłuż trajektorii (a nie tylko stopnia prędkości). Aby symulator mógł zrealizować
+to zadanie, potrzebna jest wartość drogi do przebycia przez punkt TCP w ramach
+realizacji pojedynczej instrucji pozycjonowania. W takim przypadku wartość tę podaje
+się jako parametr funkcji DONE(). Opisana powyżej pętla ma wówczas następującą postać:
+
+
+    REPEAT
+      MOVE( <Nazwa członu A> , <przyrost zmiennej konfiguracyjnej członu A w funkcji czasu> )
+      MOVE( <Nazwa członu B> , <przyrost zmiennej konfiguracyjnej członu B w funkcji czasu> )
+      ...
+      MOVE( <Nazwa członu X> , <przyrost zmiennej konfiguracyjnej członu X w funkcji czasu> )
+    UNTIL DONE (<wyrażenie arytmetyczne określające wartość drogi do przebycia przez TCP>)
+
+
+Przykładowa procedura opisująca czynność podstawową realizowaną przez manipulator:
+----------------------------------------------------------------------------------
+
+
+Poniższa procedura realizuje ruch opisanego powyżej manipulatora, w wyniku którego
+jego poszczególne człony (ARM_Z, ARM_X i HAND) zostaną doprowadzone do położenia
+określonego przez zmienne konfiguracyjne będące parametrami tej procedury (z, x, theta).
+
+
+
+
+  $*********************
+  procedure move joints                $ Procedura realizująca ruch manipulatora
+  parameters z,x,theta                $ Parametry instrukcji pozycjonowania (docelowe
+                                $ wartości zmiennych konfiguracyjnych)
+  dz:=z-tstart(arm_z)                $ Obliczenie docelowego przyrostu parametru 
+                                $ konfiguracyjnego członu ARM_Z
+  dx:=x-tstart(arm_x)                $ Obliczenie docelowego przyrostu parametru
+                                $ konfiguracyjnego członu ARM_X
+  repeat
+   move(arm_z,L()*dz)                        $ Określenie przyrostu wartości zmiennej
+                                        $ konfiguracyjnej członu ARM_Z w funkcji
+                                        $ znormalizowanego czasu L()
+   move(arm_x,L()*dx)                        $ Określenie przyrostu wartości zmiennej
+                                        $ konfiguracyjnej członu ARM_X w funkcji
+                                        $ znormalizowanego czasu L()
+   move(hand,L()*(theta-tstart(hand)))        $ Określenie przyrostu wartości zmiennej
+                                        $ konfiguracyjnej członu HAND w funkcji
+                                        $ znormalizowanego czasu L()
+  until done()
+  endproc
+  $*********************
+
+
+
+
+Uwaga1:        Z zapisu powyższej procedury wynika, że założono liniową zależność przyrostu
+        wartości poszczególnych zmiennych konfiguracyjnych od czasu L(). Oznacza to,
+        że prędkość, z jaką się przemieszczają poszczególne człony, jest stała.
+        W takim razie na początku i na końcu tego ruchu następują bardzo gwałtowne
+        przyspieszenia (teoretycznie o wartości nieskończonej). Nie jest to zgodne
+        z zasadami planowania trajektorii członów manipulatora w przestrzeni
+        konfiguracyjnej. Dlatego powyższą procedurę należałoby zmienić tak, aby
+        zapewnić płynną zmianę prędkości poszczególnych członów podczas realizacji
+        opisywanego ruchu (modyfikacja ta nie będzie jednak opisana w niniejszej
+        instrukcji).
+
+
+Przykładowe wywołanie instrukcji MOVE JOINTS w programie sterującym gniazdem
+zrobotyzowanym, przy założeniu, że podczas ładowania modelu manipulatora została
+mu przypisana nazwa "ROBOCIK":
+
+
+    ACTION (ROBOCIK, MOVE JOINTS, 200, 300, 45°)
+
+
+
+
+Realizacja odwrotnego zadania kinematyki:
+-----------------------------------------
+
+
+Odwrotne zadanie kinematyki trzeba rozwiązać w przypadku definiowania instrukcji
+pozycjonowania, których parametrami są współrzędne kartezjańskie efektora manipulatora.
+Procedura opisująca realizację takiej instrukcji ma taką samą postać, jak to opisano
+powyżej, czyli musi zawierać pętlę:
+
+
+    REPEAT
+      MOVE( <Nazwa członu A> , <przyrost zmiennej konfiguracyjnej członu A> )
+      MOVE( <Nazwa członu B> , <przyrost zmiennej konfiguracyjnej członu B> )
+      ...
+      MOVE( <Nazwa członu X> , <przyrost zmiennej konfiguracyjnej członu X> )
+    UNTIL DONE ()
+
+
+jednak przed tą pętlą muszą być zrealizowane obliczenia wartości docelowych zmiennych
+konfiguracyjnych poszczególnych członów manipulatora na podstawie zadanych współrzędnych
+kartezjańskich (będących parametrami procedury).
+
+
+
+
+
+
+
+
+
+
+
+
+BUDOWA PROGRAMU STERUJĄCEGO SYSTEMEM ZROBOTYZOWANYM
+===================================================
+
+
+Program sterujący urządzeniami wchodzącymi w skład systemu zrobotyzowanego
+jest programem w języku ARLANG, wykorzystującym specjalistyczne procedury
+biblioteczne, odpowiedzialnych za realizację określonych czynności elementarnych
+(wywołania tych procedur nazywać się będzie w niniejszej dokumentacji podstawowymi
+instrukcjami programu sterującego). Program ten jest zapisywany w pliku tekstowym
+o standardowym rozszerzeniu .PRG
+
+
+Uwaga!  W dalszym ciągu niniejszej instrukcji w stosunku do urządzeń
+        wchodzących w skład gniazda zrobotyzowanego będzie się używać
+        sformułowania "robot" (chociaż mogą to być również urządzenia
+        dużo prostsze, nie będące sensu stricte robotami).
+
+
+Prawidłowe funkcjonowanie programu wymaga umieszczenia na jego początku dyrektywy:
+
+
+                        #INCLUDE (<nazwa programu>.TMP)
+
+
+gdzie <nazwa programu> jest nazwą pliku tekstowego, w którym jest zapisany program.
+Przykładowo, jeśli plik ten ma nazwę TEST.PRG, to wspomniana dyrektywa powinna mieć
+postać:
+
+
+                        #INCLUDE (TEST.TMP)
+
+
+
+
+PODSTAWOWE INSTRUKCJE PROGRAMU STERUJĄCEGO:
+-------------------------------------------
+
+
+
+
+ACTION (<nazwa robota>, <nazwa procedury> [, <parametry> ])
+
+
+        Instrukcja ta powoduje realizację przez określonego robota instrukcji
+        zdefiniowanej w opisie tegoż urządzenia (a konkretnie: w odpowiednim
+        pliku *.ROB, w procedurze, której nazwa jest drugim parametrem
+        instrukcji ACTION). 
+        Instrukcja ACTION powoduje wywołanie tej procedury (zazwyczaj zawierającej
+        pętlę z szeregiem wywołań procedury MOVE dla poszczególnych członów
+        manipulatora).
+        Jeśli wywoływana procedura ma parametry, to wartości tych parametrów
+        podaje się, oddzielając je od siebie przecinkami.
+        DLA ZAAWANSOWANYCH:
+        Istnieje też możliwość określenia procedury przerwania (bezparametrowej
+        procedury zdefiniowanej w pliku programu sterującego), która będzie
+        automatycznie wywoływana w każdym przejściu pętli REPEAT ... UNTIL DONE()
+        Główne zastosowanie przerwania polega na opcjonalnym wywoływaniu w nim
+        instrukcji BREAK, która powoduje zakończenie realizacji pętli
+        REPEAT ... UNTIL DONE
+
+
+        Przykład: ACTION (MANIPULATOR,GOTO,200,180,45)
+
+
+ATTACH TO (<Nazwa robota> [:<Nazwa członu>] [,<Zasięg X> [,<Zasięg Y> [,<Zasięg Z]]]
+
+
+        Przyłączenie ("chwycenie") obiektu przez robota o podanej nazwie. 
+        Przyłączenie następuje do tzw. członu czynnego (jest to człon o nazwie
+        podanej jako drugi parametr instrukcji). Jeśli nazwa członu czynnego
+        nie jest podana, to automatycznie zakłada się, że chodzi o człon
+        opisany w geometrii robota jako GRIPPER.
+        Do członu czynnego przyłączony zostanie ten obiekt, dla którego początek
+        układu współrzędnych znajduje się najbliżej początku układu współrzędnych
+        członu czynnego.
+        Jeśli podany jest zasięg (zdefiniowany przez kolejne trzy parametry
+        instrukcji ATTACH TO), to brane są pod uwagę tylko takie obiekty
+        dołączane, których początek układu współrzędnych znajduje się
+        w odległościach nie większych niż <Zasięg X>, <Zasięg Y>, <Zasięg Z>
+        odpowiednio od płaszczyzn YZ, XZ i XY układu współrzędnych członu czynnego.
+        Jeżeli <Zasięg Z> nie jest podany, to automatycznie przyjmuje on wartość
+        <Zasięg Y>, zaś jeśli <Zasięg Y> nie jest podany, to automatycznie 
+        przyjmuje on wartość <Zasięg X>.
+        Za pomocą instrukcji ATTACH TO można przyłączać obiekty nie tylko
+        do robotów, ale także dowolnych innych obiektów np. do wymiennego chwytaka,
+        przyłączonego uprzednio do robota (w takim przypadku zamiast nazwy robota
+        podaje się jako parametr instrukcji ATTACH TO nazwę obiektu, do którego
+        następuje dołączenie).
+
+
+        Przykład: ATTACH TO (MANIPULATOR:GRIPPER,20,20,20)
+
+
+ATTACH ORIGIN TO (<Nazwa robota> [:<Nazwa członu>] [,<Zasięg X> [,<Zasięg Y> [,<Zasięg Z]]]
+
+
+        Realizacja tej samej czynności, co w przypadku instrukcji ATTACH TO,
+        jednak dodatkowo obiekt dołączany jest przemieszczony w ten sposób,
+        żeby jego układ współrzędnych pokrył się z układem współrzędnych
+        członu czynnego robota. 
+
+
+        Przykład: ATTACH ORIGIN TO (MANIPULATOR:GRIPPER,20,20,20)
+
+
+CONNECT (<Nazwa obiektu dołączanego> , <Nazwa robota> [:<Nazwa członu>])
+
+
+        Przyłączenie obiektu (może nim być także robot) do robota o podanej
+        nazwie, a konkretnie do jego tzw. członu czynnego (jest to człon o nazwie
+        podanej jako drugi parametr instrukcji). Jeśli nazwa członu aktywnego
+        nie zostanie podana, to przyłączenie następuje automatycznie do członu
+        określonego w opisie geometrii robota jako GRIPPER.
+        Za pomocą instrukcji CONNECT można przyłączać obiekty nie tylko        do robotów,
+        ale także do dowolnych innych obiektów (w takim przypadku zamiast nazwy
+        robota podaje się jako parametr instrukcji CONNECT nazwę obiektu, do
+        którego ma nastąpić przyłączenie).
+
+
+        Przykład: CONNECT (CART:PLATFORM, WORKPIECE)
+
+
+CONNECT ORIGIN (<Nazwa obiektu dołączanego> , <Nazwa robota> [:<Nazwa członu>])
+
+
+        Realizacja tej samej czynności, co w przypadku instrukcji CONNECT,
+        jednak dodatkowo obiekt dołączany jest przemieszczony w ten sposób,
+        żeby jego układ współrzędnych pokrył się z układem współrzędnych
+        członu czynnego robota. 
+
+
+        Przykład: CONNECT ORIGIN (CART:PLATFORM, WORKPIECE)
+
+
+NEW CONNECTION()
+
+
+        Funkcja zwracająca wartość 1, gdy w wyniku ostatnio wywołanej instrukcji
+        ATTACH TO, ATTACH ORIGIN TO, CONNECT lub CONNECT ORIGIN nastapiło
+        dołączenie jakiegoś obiektu (dołączenie zakończyło się sukcesem).
+        W przewciwnym razie funkcja ta zwraca wartość 0.
+
+
+DETACH FROM (<Nazwa robota> [:<Nazwa członu>])
+
+
+        Odłączenie WSZYSTKICH obiektów, które były dołączone do członu czynnego
+        robota za pomocą użytych wcześniej procedur CONNECT lub ATTACHTO.
+        Jeśli nazwa członu czynnego nie jest podana, to automatycznie zakłada
+        się, że chodzi o człon określony wcześniej jako GRIPPER.
+
+
+        Przykład: DETACH FROM (MANIPULATOR)
+
+
+DISCONNECT (<Nazwa obiektu>)
+
+
+        Odłączenie obiektu o podanej nazwie od robota (lub innego obiektu),
+        do którego był on wcześniej przyłączony
+
+
+        Przykład: DISCONNECT (WORKPIECE)
+
+
+SPEED (wartość prędkości)
+
+
+        Ustawienie prędkości przemieszczeń robota (standardowa wartość wynosi
+        10 jednostek)
+
+
+        Przykład: SPEED (15)
+
+
+
+
+
+
+INSTRUKCJE SŁUŻĄCE DO AUTOMATYCZNEGO USTAWIANIA PARAMETRÓW OBSERWACJI PRZESTRZENI ROBOCZEJ
+------------------------------------------------------------------------------------------
+
+
+
+
+ZOOM (wielkość obrazu [,liczba stopklatek])
+
+
+        Procedura ta powoduje ustawienie powiększenia obrazu przestrzeni roboczej.
+        Wielkość obrazu określana jest w milimetrach (im mniejsza jest jej wartość,
+        tym wieksze powiększenie). Standardowa wartość wynosi 1500.
+        Opcjonalnie podawana liczba stopklatek jest to liczba faz wizualizacji
+        powiększania (zalecana 10 do 20). Jeśli liczba stopklatek nie jest podana,
+        to system automatycznie przyjmuje wartość 1 (powiększony obraz        pojawia się
+        od razu, bez faz przejściowych)
+
+
+        Przykład: ZOOM (2500, 10)
+
+
+HIDE (<Nazwa obiektu> [: <Nazwa członu>])
+
+
+        Ustawienie niewidoczności obiektu (robota, jego członu albo innego obiektu).
+        Jeśli robot jest niewidoczny, to wszystkie jego człony też będą niewidoczne
+
+
+        Przykład: HIDE (WORKPIECE)
+
+
+HIDE CONNECTED (<Nazwa obiektu> [: <Nazwa członu>])
+
+
+        Ustawienie niewidoczności wszystkich obiektów (także robotów), które są
+        dołączone do podanego obiektu
+
+
+        Przykład: HIDE CONNECTED (CART: PLATFORM)
+
+
+SHOW (<Nazwa obiektu> [: <Nazwa członu>])
+
+
+        Odwołanie niewidoczności obiektu (robota, jego członu albo innego obiektu).
+        UWAGA! Jeśli robot został ustawiony jako niewidoczny za pomocą instrukcji
+        HIDE, to pomimo ustawienia widoczności poszczególnych członów za pomocą
+        instrukcji SHOW, człony te nadal będą niewidoczne.
+
+
+        Przykład: SHOW (WORKPIECE)
+
+
+SHOW CONNECTED (<Nazwa obiektu> [: <Nazwa członu>])
+
+
+        Odwołanie niewidoczności wszystkich obiektów (także robotów), które są
+        dołączone do podanego obiektu
+
+
+        Przykład: SHOW CONNECTED (CART: PLATFORM)
+
+
+VIEW ( x [,y [,z [a, [,b [,c ]]]]])
+
+
+        Ustawienie widoku na przestrzeń roboczą określonego przez współrzędne liniowe
+        x,y,z (w układzie współrzędnych projektu) oraz katy a,b,c które podaje się
+        w radianach (albo w stopniach, jeśli po wartości liczbowej wpisze się symbol °,
+        który można otrzymać za pomocą kombinacji klawiszy ALT + 248).
+        Instrukcję tę należy rozumieć jako ustawienie układu współrzędnych obserwatora
+        w stosunku do układu współrzędnych projektu, przy czym zakłada się, że obserwator
+        patrzy "z góry" tj. z kierunku dodatniej półosi Z układu obserwatora.
+        Zerowe wartości x,y,z,a,b,c oznaczają pokrywanie się układu współrzędnych
+        obserwatora z układem współrzędnych projektu.
+        Parametry x,y,z opisują translację układu współrzędnych obserwatora
+        w stosunku do układu współrzędnych projektu, zaś kąty a,b,c są to kąty Eulera
+        odpowiadające obrotom układu współrzędnych obserwatora odpowiednio wokół osi
+        X,Y,Z
+
+
+        Przykład: VIEW (500,400,0,90°,0,0)
+
+
+ATTACH VIEW (<Nazwa obiektu> [:<Nazwa członu>] [,<Liczba stopklatek>]
+
+
+        Przesunięcie początku układu współrzędnych obserwatora do początku układu
+        współrzędnych obiektu o podanej nazwie oraz związanie go z tym obiektem
+        (aż do odwołania za pomocą instrukcji DETACH VIEW, VIEW lub kolejnej
+        instrukcji ATTACH VIEW). Od tego momentu obserwator będzie się przemieszczać
+        wraz z obiektem.
+        Liczba stopklatek to liczba faz wizualizacji przesuwania układu współrzędnych
+        (zalecana 10 do 20). Jeśli liczba stopklatek nie jest podana, to system
+        automatycznie przyjmuje wartość 1 (początek układu obserwatora jest
+        umieszczany w położeniu docelowym od razu, bez faz przejściowych)
+
+
+        Przykład: ATTACH VIEW (MANIPULATOR:GRIPPER, 10)
+
+
+DETACH VIEW
+
+
+        Rozłączenie utworzonego za pomocą procedury ATTACHVIEW powiązania pomiędzy
+        obiektem i obserwatorem.
+
+
+        Przykład: DETACH VIEW
+
+
+MOVE VIEW (dx [,dy [,dz [,<Liczba stopklatek>]])
+
+
+        Przesunięcie układu współrzędnych obserwatora wzdłuż osi X, Y, Z
+        odpowiednio o wartości dx, dy, dz.
+        Liczba stopklatek to liczba faz wizualizacji przesuwania układu (zalecana
+        10 do 20). Jeśli liczba stopklatek nie jest podana, to system automatycznie
+        przyjmuje wartość 1 (początek układu obserwatora jest umieszczany w położeniu
+        docelowym od razu, bez faz przejściowych)
+
+
+        Przykład: MOVE VIEW (100,0,90,10)
+
+
+ROTATE VIEW (<Oś>,<kąt> [,<Liczba stopklatek>])
+
+
+        Obrót układu współrzędnych obserwatora wokół podanej osi (X, Y albo Z)
+        o kąt podany w radianach (lub w stopniach, jeśli po wartości liczbowej
+        wpisze się symbol °, który można otrzymać za pomocą kombinacji klawiszy
+        ALT + 248).
+        Liczba stopklatek to liczba faz wizualizacji obracania układu obserwatora
+        (zalecana 10 do 20). Jeśli liczba stopklatek nie jest podana, to system
+        automatycznie przyjmuje wartość 1 (początek układu obserwatora jest
+        umieszczany w położeniu docelowym od razu, bez faz przejściowych)
+
+
+        Przykład: ROTATE VIEW (X, 90°)
+
+
+SHOW MAIN INSTRUCTIONS
+
+
+        Wywołanie tej instrukcji powoduje, że podczas symulacji programu sterującego
+        wyświetlana będzie tylko treść instrukcji bezpośrednio związanych z realizacją
+        czynności przez roboty (czyli instrukcji, do których następują odwołania za
+        pomocą instrukcji ACTION). Nie będzie natomiast wyświetlana np. treść instrukcji
+        dotyczących ustawiania parametrów dotyczących obserwacji przestrzeni roboczej
+
+
+SHOW ALL INSTRUCTIONS
+
+
+        Wywołanie tej instrukcji powoduje, że podczas symulacji programu sterującego
+        wyświetlana będzie treść wszystkich instrukcji
+
+
+
+
+Uwaga dla zaawansowanych:
+
+
+         Jeśli powyższe instrukcje (oprócz instrukcji ACTION) wywoływane są w opisie
+        własnych instrukcji użytkownika, to można w nich nazwę robota zastąpić przez
+        parametr *ACTIVE. Wówczas dana instrucja będzie się odnosić do aktywnego
+        robota tj. tego, który jest określony w instrukcji ACTION.
+
+
+
+
+INSTRUKCJE SŁUŻĄCE DO KOMUNIKACJI GŁOSOWEJ
+------------------------------------------
+
+
+SPEAKER (numer,komunikat)
+
+
+        Wygłoszenie komunikatu podanego jako drugi parametr instrucji SPEAKER, przy czym
+        polskie głoski można uzyskać stawiając znak ^ po danej literze, zaś odstępy
+        (spacje) należy zastąpić znakami podkreślenia _
+        Parametr "numer" oznacza numer głośnika: głośnik nr 1 jest przeznaczony dla języka
+        polskiego, natomiast głośnik nr 2 wygłasza komunikaty w języku angielskim.
+        W przypadku języka polskiego (głośnik nr 1), jeśli ciąg znaków (cyfr) ma być
+        odczytany jako liczba, to należy go poprzedzić znakiem # np.: 
+
+
+                SPEAKER (1 , 5_razy_5_wynos^i_#25)
+
+
+        W treści komunikatu mogą też występować fragmenty "parametryczne": zamiast
+        konkretnego tekstu można wstawić w nawiasach prostokątnych [ ] dowolne wyrażenie
+        arytmetyczne, którego wynik będzie wygłoszony np.:
+
+
+                X:=5; SPEAKER (1 , [X]_razy_[X]_wynos^i_[X*X])
+
+
+
+
+VOICE (numer)                
+
+
+        Ustawienie numeru głosu dla procedury SPEAKER (funkcjonuje tylko dla języka
+        angielskiego.
+
+
+
+
+VOLUME (wartość)        
+
+
+        Ustawienie głośności dla procedury SPEAKER (funkcjonuje tylko dla języka
+        angielskiego). Glośność można ustawić w skali od 1 do 100.
+
+
+
+
+SPEECH RATE (wartość)
+
+
+        Ustawienie prędkości mowy dla procedury SPEAKER (funkcjonuje tylko dla języka
+        angielskiego). Prędkość można ustawić w granicach od -10 (spowolnienie) do +10
+        (przyspieszenie). Standardowa prędkość odpowiada wartości 0.
+
+
+
+
+MICROPHONE
+
+
+        Rejestracja i analiza treści wypowiedzi (komendy) wypowiedzianej przez użytkownika
+        do mikrofonu. Rezultat tej analizy jest dostępny za pośrednictwem funkcji COMMAND()
+        oraz SVALUE().
+
+
+
+
+ACTIVATE (nazwa)        
+
+
+        Instrukcja ta może być wywoływana do 20 razy i powoduje dodanie komendy o podanej
+        nazwie do listy komend "aktywnych" (które będą uwzględniane w ramach analizy
+        realizowanej przez instrukcję MICROPHONE).
+        Nazwa komendy może być zapisana zarówno małymi jak dużymi literami.
+        Brak jakiegokolwiek wywołania instrukcji ACTIVATE powoduje, że uwzględniane będą
+        wszystkie komendy z podanego zestawu komend.
+        Wywołana aktywacja komend obowiązuje dla najbliższego wywołania instrukcji MICROPHONE.
+
+
+
+
+COMMAND (nazwa)
+        
+        Jest to funkcja zwracająca wartość 1 jeśli nazwa podana jako jej parametr jest
+        taka sama jak nazwa komendy wypowiedzianej przy wywołaniu instrukcji MICROPHONE.
+        W przypadku braku tej zgodności funkcja zwraca wartość 0.
+        Sposób przypisywania nazw komendom w języku naturalnym jest opisany w osobnej
+        dokumentacji.
+
+
+        Przykład: IF COMMAND (OPEN GRIPPER) = 1
+                   ACTION (MANIPULATOR, OPEN)
+                  ENDIF
+
+
+SVALUE (numer)
+        
+        Funkcja zwracająca wartość parametru (Semantic VALUE) o określonym numerze,
+        opisującego komendę w języku naturalnym, wypowiedzianą przy wywołaniu instrukcji
+        MICROPHONE. Przypisywanie parametrów do komend jest opisane w osobnej dokumentacji.
+
+
+
+
+
+
+PRZYKŁADY PROGRAMÓW W JĘZYKU ARLANG SŁUŻĄCYCH DO STEROWANIA ROBOTEM MOBILNYM
+----------------------------------------------------------------------------
+
+
+
+
+Przykład 1  Program realizujący przenoszenie przedmiotu znajdującego się na stole
+            ---------------------------------------------------------------------
+
+
+#include(robot.tmp)
+
+
+procedure TakePart
+parameters nr
+AttachView(manipulator:gripper,10)
+zoom(500,10)
+Action(manipulator,Goto,0,180,0)
+Action(manipulator,Goto,310,180,0)
+Action(manipulator,Goto,310,130,0)
+Action(manipulator,Close)
+Action(manipulator,Goto,310,180,0)
+xp:=(nr-1)*40
+Action(manipulator,Goto,xp,180,0)
+Action(manipulator,Goto,xp,50,0)
+Action(manipulator,Open)
+Action(manipulator,Goto,xp,90,0)
+zoom(1500,10)
+AttachView(cart:tcp,10)
+endproc
+
+
+procedure PutPart
+parameters nr
+xp:=(nr-1)*40
+AttachView(manipulator:gripper,10)
+zoom(500,10)
+Action(manipulator,Goto,xp,90,0)
+Action(manipulator,Goto,xp,50,0)
+Action(manipulator,Close)
+Action(manipulator,Goto,xp,180,0)
+Action(manipulator,Goto,310,180,0)
+Action(manipulator,Goto,310,130,0)
+Action(manipulator,Open)
+Action(manipulator,Goto,310,180,0)
+Action(manipulator,Goto,0,180,0)
+Action(manipulator,Goto,0,90,0)
+zoom(1500,10)
+AttachView(cart:tcp,10)
+endproc
+
+
+program
+Action(cart,Back,105)
+call TakePart(1)
+Action(cart,Back,90)
+call TakePart(2)
+call PutPart(1)
+Action(cart,Back,45)
+call PutPart(2)
+Action(cart,Forwards,90)
+DetachView
+Action(cart,Forwards,150)
+
+
+
+
+Przykład 2 Program służący do głosowego sterowania robotem mobilnym
+           --------------------------------------------------------
+
+
+#include(robot.tmp)
+
+
+procedure TakePart
+Action(manipulator,Goto,340,180,0)
+Action(manipulator,Goto,340,130,0)
+Action(manipulator,Close)
+Action(manipulator,Goto,340,180,0)
+endproc
+
+
+procedure PutPart
+Action(manipulator,Goto,340,130,0)
+Action(manipulator,Open)
+Action(manipulator,Goto,340,180,0)
+endproc
+
+
+program
+y_green:=30
+y_blue:=-30
+y_cart:=150
+speaker(1,Wybierz symulację_ciągłą)
+Action(manipulator,Goto,0,180,0)
+zoom(1000,10)
+repeat
+ speaker(1,Czekam_na_polecenie)
+ microphone
+ if command(przeniesienie)
+  if svalue(1)>0
+   dy:=y_green-y_cart
+   y_goal:=y_cart+dy+svalue(2)
+   if y_goal<70 .&. y_goal>y_blue+20
+    ok:=1
+   else
+    ok:=0
+   endif
+  else
+   dy:=y_blue-y_cart
+   y_goal:=y_cart+dy+svalue(2)
+   if y_goal>-70 .&. y_goal<y_green-20
+    ok:=1
+   else
+    ok:=0
+   endif
+  endif
+  if ok
+   Action(cart,Forwards,dy)
+   call TakePart
+   Action(cart,Forwards,svalue(2))
+   call PutPart
+   y_cart:=y_goal
+   if svalue(1)>0
+    y_green:=y_cart
+   else
+    y_blue:=y_cart
+   endif
+  else
+   speaker(1,Pozycja_poza_zakresem)
+  endif
+ endif
+until command(zakonczenie)
+speaker(1,Do_widzenia)
+zoom(1500,10)
+Action(manipulator,Goto,0,180,0)
+Action(manipulator,Goto,0,90,)
+Action(cart,Forwards,150-y_cart)
+
+
+
+
+Opis quasi-naturalnego języka komend głosowych dla przykładu 2
+--------------------------------------------------------------
+
+
+$language: Polish
+
+
+#com zakonczenie
+zakończ program
+proszę zakończyć program
+
+
+#com przeniesienie
+*przenies *kolorowy *przedmiot ?o *liczba milimetrów do *kierunek: p2; p4*p7
+
+
+#def przenies
+przenieś
+przesuń
+posuń
+przemieść
+proszę *przeniesc
+
+
+#def przeniesc
+przenieść
+przesunąć
+posunąć
+przemieścić
+
+
+#def kolorowy
+niebieski        :-1
+zielony                :1
+
+
+#def przedmiot
+przedmiot
+wałek
+
+
+#def liczba
+dziesięć        :10
+dwadzieścia        :20
+trzydzieści        :30
+czterdzieści        :40
+
+
+#def kierunek
+przodu        :1
+tyłu        :-1
