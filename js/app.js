@@ -69,19 +69,19 @@ const DEMO_5DOF = `$ 5-DOF Articulated Arm Robot
 $ Base rotation + 3 elbow joints + wrist rotation
 $********************
 procedure kinematics
-$ Joint 1: Shoulder - rotation around vertical axis (Z)
+$ Joint 1: Shoulder - rotation around vertical axis, alpha=-90 tilts Z horizontal for elbows
 next joint(shoulder,base,-180,180,0)
-dh notation(0,0,60,t())
-$ Joint 2: Elbow 1 - pitch rotation
+dh notation(0,-90°,60,t())
+$ Joint 2: Elbow 1 - pitch in vertical plane (Z is now horizontal)
 next joint(elbow1,shoulder,-90,90,0)
-dh notation(80,90°,0,t())
-$ Joint 3: Elbow 2 - pitch rotation
+dh notation(80,0,0,t())
+$ Joint 3: Elbow 2 - pitch in vertical plane
 next joint(elbow2,elbow1,-120,120,0)
 dh notation(70,0,0,t())
-$ Joint 4: Elbow 3 - pitch rotation
+$ Joint 4: Elbow 3 - pitch, alpha=-90 tilts axis for wrist rotation
 next joint(elbow3,elbow2,-120,120,0)
-dh notation(60,0,0,t())
-$ Joint 5: Wrist - rotation around own axis
+dh notation(60,-90°,0,t())
+$ Joint 5: Wrist - rotation around arm's own axis
 next joint(wrist,elbow3,-360,360,0)
 dh notation(0,0,30,t())
 endproc
@@ -93,23 +93,26 @@ tz(20)
 +cone(40,30,10)
 tz(10)
 +cylinder(30,30)
-$ Shoulder - rotating cylinder on top of base
+$ Shoulder - rotating vertical cylinder
 object(shoulder)
-+cylinder(20,60)
-$ Elbow 1 - first arm segment
++cylinder(15,60)
+$ Elbow 1 - first arm segment (cone along X via rotation)
 object(elbow1)
-+cone(15,12,80)
+ry(-90°)
++cone(12,10,80)
 $ Elbow 2 - second arm segment
 object(elbow2)
-+cone(12,10,70)
+ry(-90°)
++cone(10,8,70)
 $ Elbow 3 - third arm segment
 object(elbow3)
-+cone(10,8,60)
-$ Wrist - gripper/tool mount
+ry(-90°)
++cone(8,6,60)
+$ Wrist - gripper/tool
 object(wrist:gripper)
-+cylinder(8,10)
++cylinder(6,10)
 tz(10)
-+cone(8,3,20)
++cone(6,2,20)
 endproc
 $********************
 procedure mj
