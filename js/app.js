@@ -1,10 +1,10 @@
 // ============================================================
 // ARLANG Robotics Emulator — Main Application
 // ============================================================
-import { Lexer } from './parser/lexer.js';
-import { Parser } from './parser/parser.js';
-import { Interpreter } from './interpreter/interpreter.js';
-import { buildRobotFromAST } from './interpreter/robotBuilder.js';
+import { Lexer } from './parser/lexer.js?v=4';
+import { Parser } from './parser/parser.js?v=4';
+import { Interpreter } from './interpreter/interpreter.js?v=4';
+import { buildRobotFromAST } from './interpreter/robotBuilder.js?v=3';
 import { SceneManager } from './viewer/scene.js';
 
 // ── Demo robot code (from kodStart.rtf) ──
@@ -63,71 +63,52 @@ $ Inverse kinematics placeholder
 call mj(x,y,z,gamma)
 endproc`;
 
-// ── 5-DOF Articulated Arm Robot ──
-// Base (fixed) → Shoulder (rotation around Z) → Elbow1 → Elbow2 → Elbow3 → Wrist (rotation)
-const DEMO_5DOF = `$ 5-DOF Articulated Arm Robot
-$ Base rotation + 3 elbow joints + wrist rotation
-$********************
-procedure kinematics
-$ Joint 1: Shoulder - rotation around vertical axis, alpha=-90 tilts Z horizontal for elbows
-next joint(shoulder,base,-180,180,0)
-dh notation(0,-90°,60,t())
-$ Joint 2: Elbow 1 - pitch in vertical plane (Z is now horizontal)
-next joint(elbow1,shoulder,-90,90,0)
-dh notation(80,0,0,t())
-$ Joint 3: Elbow 2 - pitch in vertical plane
-next joint(elbow2,elbow1,-120,120,0)
-dh notation(70,0,0,t())
-$ Joint 4: Elbow 3 - pitch, alpha=-90 tilts axis for wrist rotation
-next joint(elbow3,elbow2,-120,120,0)
-dh notation(60,-90°,0,t())
-$ Joint 5: Wrist - rotation around arm's own axis
-next joint(wrist,elbow3,-360,360,0)
-dh notation(0,0,30,t())
+// ── Robot Zajecia — 5DOF Articulated Arm ──
+const DEMO_ZAJECIA = `procedure kinematics
+next joint(J1,base,-180,180,0)
+dh notation(0,90°,50,t())
+next joint(J2,J1,-90,90,0)
+dh notation(40,0,0,t())
+next joint(J3,J2,-120,120,0)
+dh notation(40,0,0,t())
+next joint(J4,J3,-120,120,0)
+dh notation(40,0,0,t())
+next joint(J5,J4,-360,360,0)
+dh notation(0,90°,0,t())
 endproc
 $********************
 procedure geometry
-$ Base - fixed platform
-+cylinder(40,20)
-tz(20)
-+cone(40,30,10)
-tz(10)
-+cylinder(30,30)
-$ Shoulder - rotating vertical cylinder
-object(shoulder)
-+cylinder(15,60)
-$ Elbow 1 - first arm segment (cone along X via rotation)
-object(elbow1)
-ry(-90)
-+cone(12,10,80)
-$ Elbow 2 - second arm segment
-object(elbow2)
-ry(-90)
-+cone(10,8,70)
-$ Elbow 3 - third arm segment
-object(elbow3)
-ry(-90°)
-+cone(8,6,60)
-$ Wrist - gripper/tool
-object(wrist:gripper)
-+cylinder(6,10)
-tz(10)
-+cone(6,2,20)
++cuboid(60,60,8)
+tz(8)
++cylinder(22,50)
+object(J1)
+rx(-90)
++cylinder(20,50)
+tz(40)
+-cylinder(13,20)
+object(J2)
++arm3(24,24,40,12,10,0)
+object(J3)
++arm3(24,24,40,12,10,0)
+object(J4)
++arm2(24,24,40,12,10,0)
+object(J5:gr)
++cuboid(10,10,10)
 endproc
 $********************
 procedure mj
 parameters t1,t2,t3,t4,t5
-dt1:=t1-tstart(shoulder)
-dt2:=t2-tstart(elbow1)
-dt3:=t3-tstart(elbow2)
-dt4:=t4-tstart(elbow3)
-dt5:=t5-tstart(wrist)
+dt1:=t1-tstart(J1)
+dt2:=t2-tstart(J2)
+dt3:=t3-tstart(J3)
+dt4:=t4-tstart(J4)
+dt5:=t5-tstart(J5)
 repeat
- move(shoulder,dt1*l())
- move(elbow1,dt2*l())
- move(elbow2,dt3*l())
- move(elbow3,dt4*l())
- move(wrist,dt5*l())
+ move(J1,dt1*l())
+ move(J2,dt2*l())
+ move(J3,dt3*l())
+ move(J4,dt4*l())
+ move(J5,dt5*l())
 until done()
 endproc`;
 
@@ -245,7 +226,7 @@ class App {
   _loadDemo() {
     this.files.clear();
     this.files.set('robot.rob', DEMO_CODE);
-    this.files.set('arm5dof.rob', DEMO_5DOF);
+    this.files.set('robot_zajecia.rob', DEMO_ZAJECIA);
     this.activeFile = null; // prevent _saveCurrentFile from overwriting
     this.activeTab = 'robot';
     this._updateFileSelector();

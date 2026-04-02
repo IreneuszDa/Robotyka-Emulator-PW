@@ -3,7 +3,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { NodeType } from '../parser/parser.js';
-import { CSGBuilder } from '../csg/operations.js';
+import { CSGBuilder } from '../csg/operations.js?v=7';
 import { Joint, RobotModel } from '../robot/kinematics.js';
 
 /**
@@ -48,7 +48,11 @@ function buildGeometry(geometryProc, interpreter, allProcedures) {
         const standardShapes = [
           'CUBOID', 'CYLINDER', 'CONE', 'SPHERE', 'WK',
           'LHSP', 'UHSP', 'LSPC', 'USPC',
-          'ICYL', 'OCYL', 'ISPH', 'OSPH', 'ICON', 'OCON'
+          'ICYL', 'OCYL', 'ISPH', 'OSPH', 'ICON', 'OCON',
+          'PIN1', 'PIN2', 'PIN3', 'PIN4',
+          'PART1', 'PART2', 'PART3', 'PART4',
+          'BASE1', 'ARM1', 'ARM2', 'ARM3',
+          'BLOCK1', 'CRANKSHAFT'
         ];
 
         if (!standardShapes.includes(shape)) {
@@ -118,7 +122,11 @@ function processGeometryBody(body, builder, interpreter, allProcedures) {
         const standardShapes = [
           'CUBOID', 'CYLINDER', 'CONE', 'SPHERE', 'WK',
           'LHSP', 'UHSP', 'LSPC', 'USPC',
-          'ICYL', 'OCYL', 'ISPH', 'OSPH', 'ICON', 'OCON'
+          'ICYL', 'OCYL', 'ISPH', 'OSPH', 'ICON', 'OCON',
+          'PIN1', 'PIN2', 'PIN3', 'PIN4',
+          'PART1', 'PART2', 'PART3', 'PART4',
+          'BASE1', 'ARM1', 'ARM2', 'ARM3',
+          'BLOCK1', 'CRANKSHAFT'
         ];
         if (!standardShapes.includes(shape)) {
           const proc = allProcedures.get(shape);

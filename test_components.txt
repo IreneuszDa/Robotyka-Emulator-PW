@@ -1,0 +1,18 @@
+procedure geometry
++base1(60,10,15,10,10,0)
+tx(60)
++pin1(20,10,40,20,0)
+tx(60)
++part1(20,20,30,5,10,5,0)
+ty(60)
++part4(20,20,30,5,10,5,50,10,0)
+ty(60)
++arm3(20,40,60,15,15,50,10,0)
+tx(-60)
++block1(20,40,10,15,5,8,3,0)
+tx(-60)
++crankshaft(10,8,15,20,10,30,20,5,2,0)
+endprocedure
+
+procedure kinematics
+endprocedure
